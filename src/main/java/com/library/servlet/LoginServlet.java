@@ -26,6 +26,8 @@ import java.util.List;
 public class LoginServlet extends HttpServlet {
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+        // 强制设置请求体编码为 UTF-8
+        req.setCharacterEncoding("UTF-8");
         resp.setContentType("application/json;charset=UTF-8");
         PrintWriter out = resp.getWriter();
 

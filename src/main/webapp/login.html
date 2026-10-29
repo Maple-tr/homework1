@@ -3,24 +3,33 @@
 <head>
     <meta charset="UTF-8">
     <title>图书馆系统 - 登录</title>
+    <!-- 引入本地 Axios，防止网络超时 -->
     <script src="/js/axios.min.js"></script>
     <style>
-        body { display: flex; justify-content: center; align-items: center; height: 100vh; background-color: #f4f4f4; }
-        .login-box { background: #fff; padding: 30px; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1); width: 300px; }
+        body { display: flex; justify-content: center; align-items: center; height: 100vh; background-color: #f4f4f4; margin: 0; }
+        .login-box { background: #fff; padding: 30px; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1); width: 320px; }
+        h2 { text-align: center; margin-top: 0; color: #333; }
         .form-group { margin-bottom: 15px; }
-        .form-group input { width: 100%; padding: 8px; box-sizing: border-box; }
-        .captcha-box { display: flex; justify-content: space-between; }
+        .form-group input { width: 100%; padding: 10px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; }
+        .captcha-box { display: flex; justify-content: space-between; align-items: center; }
         .captcha-box input { width: 60%; }
-        .captcha-box img { width: 35%; cursor: pointer; }
-        .btn-group { display: flex; justify-content: space-between; }
-        button { padding: 8px 15px; cursor: pointer; }
-        .error-msg { color: red; font-size: 14px; margin-bottom: 10px; display: none; }
+        .captcha-box img { width: 35%; cursor: pointer; height: 38px; border: 1px solid #ccc; border-radius: 4px; }
+        .btn-group { display: flex; justify-content: space-between; margin-top: 20px; }
+        button { padding: 10px 15px; cursor: pointer; border: none; border-radius: 4px; font-size: 14px; }
+        .btn-reset { background: #6c757d; color: white; }
+        .btn-login { background: #007bff; color: white; width: 60%; }
+        button:hover { opacity: 0.9; }
+        .error-msg { color: red; font-size: 14px; margin-bottom: 10px; display: none; text-align: center; }
+        .register-link { text-align: center; margin-top: 15px; font-size: 14px; }
+        .register-link a { color: #007bff; text-decoration: none; }
+        .register-link a:hover { text-decoration: underline; }
     </style>
 </head>
 <body>
 <div class="login-box">
-    <h2 style="text-align: center;">用户登录</h2>
+    <h2>用户登录</h2>
     <div class="error-msg" id="errorMsg"></div>
+
     <div class="form-group">
         <input type="text" id="username" placeholder="请输入用户名(姓名)">
     </div>
@@ -29,22 +38,32 @@
     </div>
     <div class="form-group captcha-box">
         <input type="text" id="captcha" placeholder="验证码">
+        <!-- 点击图片刷新验证码 -->
         <img src="/api/captcha" onclick="this.src='/api/captcha?t='+new Date().getTime()" title="点击刷新">
     </div>
+
     <div class="btn-group">
-        <button onclick="resetForm()">重置</button>
-        <button onclick="login()">登录</button>
+        <button class="btn-reset" onclick="resetForm()">重置</button>
+        <button class="btn-login" onclick="login()">登录</button>
+    </div>
+
+    <div class="register-link">
+        没有账号？ <a href="/register.html">去注册</a>
     </div>
 </div>
 
 <script>
+    // 重置表单
     function resetForm() {
         document.getElementById('username').value = '';
         document.getElementById('password').value = '';
         document.getElementById('captcha').value = '';
         document.getElementById('errorMsg').style.display = 'none';
+        // 顺便刷新验证码
+        document.querySelector('img').src = '/api/captcha?t=' + new Date().getTime();
     }
 
+    // 登录逻辑
     function login() {
         const name = document.getElementById('username').value;
         const password = document.getElementById('password').value;
@@ -57,6 +76,7 @@
             return;
         }
 
+        // 发送 Axios 请求
         axios.post('/api/login', { name, password, captcha }).then(res => {
             if (res.data.code === 200) {
                 // 登录成功，跳转首页
@@ -64,14 +84,22 @@
             } else {
                 errorMsg.innerText = res.data.msg;
                 errorMsg.style.display = 'block';
-                // 刷新验证码
+                // 登录失败，刷新验证码
                 document.querySelector('img').src = '/api/captcha?t=' + new Date().getTime();
             }
         }).catch(err => {
+            console.error(err);
             errorMsg.innerText = '网络异常，请稍后再试';
             errorMsg.style.display = 'block';
         });
     }
+
+    // 支持在输入框内按回车登录
+    document.addEventListener('keydown', function(event) {
+        if (event.key === 'Enter') {
+            login();
+        }
+    });
 </script>
 </body>
 </html>
