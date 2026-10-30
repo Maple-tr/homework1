@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <title>图书管理</title>
+    <script src="/js/axios.min.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; background-color: #f4f4f4; padding: 20px; }
+        .header { display: flex; justify-content: space-between; margin-bottom: 20px;}
+        .btn-back { padding: 8px 15px; background: #6c757d; color: white; text-decoration: none; border-radius: 4px; }
+        .search-box { background: #fff; padding: 15px; border-radius: 8px; display: flex; gap: 10px; margin-bottom: 20px; box-shadow: 0 0 5px rgba(0,0,0,0.1); }
+        .search-box input { padding: 8px; width: 300px; border: 1px solid #ccc; border-radius: 4px; }
+        .search-box button { padding: 8px 20px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; }
+
+        table { width: 100%; border-collapse: collapse; background: #fff; border-radius: 8px; overflow: hidden; box-shadow: 0 0 5px rgba(0,0,0,0.1); }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #eee; }
+        th { background: #007bff; color: white; }
+        .btn { padding: 5px 10px; color: white; border: none; border-radius: 4px; cursor: pointer; margin-right: 5px;}
+        .btn-edit { background: #ffc107; color: black; }
+        .btn-discard { background: #dc3545; }
+        .btn-copy { background: #17a2b8; }
+
+        /* 弹窗通用样式 */
+        .modal { display: none; position: fixed; z-index: 1; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); }
+        .modal-content { background-color: #fefefe; margin: 5% auto; padding: 20px; width: 400px; border-radius: 8px; }
+        .form-group { margin-bottom: 10px; }
+        .form-group label { display: block; font-size: 14px; margin-bottom: 5px; }
+        .form-group input { width: 100%; padding: 8px; box-sizing: border-box; }
+    </style>
+</head>
+<body>
+<div class="header">
+    <h2>图书管理（查看/编辑/废弃/副本）</h2>
+    <a href="/index.html" class="btn-back">返回首页</a>
+</div>
+
+<div class="search-box">
+    <input type="text" id="keyword" placeholder="请输入书名或作者进行模糊查询...">
+    <button onclick="loadBooks()">查询</button>
+</div>
+
+<table>
+    <thead>
+    <tr><th>书名</th><th>作者</th><th>出版社</th><th>库存</th><th>状态</th><th>操作</th></tr>
+    </thead>
+    <tbody id="tableBody"></tbody>
+</table>
+
+<!-- 编辑弹窗 -->
+<div id="editModal" class="modal">
+    <div class="modal-content">
+        <h3>编辑图书</h3>
+        <input type="hidden" id="editId">
+        <div class="form-group"><label>书名</label><input type="text" id="editTitle"></div>
+        <div class="form-group"><label>作者</label><input type="text" id="editAuthor"></div>
+        <div class="form-group"><label>类型</label><input type="text" id="editType"></div>
+        <div class="form-group"><label>出版社</label><input type="text" id="editPublisher"></div>
+        <div class="form-group"><label>还书期限(天)</label><input type="number" id="editDays"></div>
+        <div class="form-group"><label>价格</label><input type="number" step="0.01" id="editPrice"></div>
+        <button class="btn btn-edit" style="width:100%; margin-top:10px;" onclick="submitEdit()">保存修改</button>
+        <button class="btn btn-back" style="width:100%; margin-top:5px;" onclick="closeModal('editModal')">取消</button>
+    </div>
+</div>
+
+<!-- 副本管理弹窗 -->
+<div id="copyModal" class="modal">
+    <div class="modal-content" style="width: 500px;">
+        <h3>副本管理</h3>
+        <input type="hidden" id="copyBookId">
+        <button class="btn btn-copy" onclick="addCopy()">+ 新增副本</button>
+        <table style="margin-top: 15px; box-shadow: none;">
+            <thead>
+            <tr><th>副本ID</th><th>状态</th><th>操作</th></tr>
+            </thead>
+            <tbody id="copyBody"></tbody>
+        </table>
+        <button class="btn btn-back" style="width:100%; margin-top:15px;" onclick="closeModal('copyModal')">关闭</button>
+    </div>
+</div>
+
+<script>
+    let currentBooks = [];
+
+    window.onload = function() { loadBooks(); };
+
+    function loadBooks() {
+        const keyword = document.getElementById('keyword').value;
+        axios.get('/api/book/query', { params: { keyword: keyword } }).then(res => {
+            if (res.data.code === 200) {
+                currentBooks = res.data.data;
+                const tbody = document.getElementById('tableBody');
+                tbody.innerHTML = '';
+                if(currentBooks.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">暂无数据</td></tr>';
+                    return;
+                }
+                currentBooks.forEach((book, index) => {
+                    let actionHtml = '';
+                    if(book.status === '正常') {
+                        actionHtml = `
+                            <button class="btn btn-edit" onclick="openEdit(${index})">编辑</button>
+                            <button class="btn btn-copy" onclick="openCopyModal('${book.id}')">副本管理</button>
+                            <button class="btn btn-discard" onclick="discard('${book.id}')">废弃</button>
+                        `;
+                    }
+                    tbody.innerHTML += `
+                        <tr>
+                            <td>${book.title}</td>
+                            <td>${book.author}</td>
+                            <td>${book.publisher || ''}</td>
+                            <td>${book.stock}</td>
+                            <td>${book.status}</td>
+                            <td>${actionHtml}</td>
+                        </tr>
+                    `;
+                });
+            }
+        });
+    }
+
+    // --- 编辑逻辑 ---
+    function openEdit(index) {
+        const book = currentBooks[index];
+        document.getElementById('editId').value = book.id;
+        document.getElementById('editTitle').value = book.title;
+        document.getElementById('editAuthor').value = book.author;
+        document.getElementById('editType').value = book.type;
+        document.getElementById('editPublisher').value = book.publisher;
+        document.getElementById('editDays').value = book.days || 30;
+        document.getElementById('editPrice').value = book.price || 0;
+        document.getElementById('editModal').style.display = 'block';
+    }
+
+    function submitEdit() {
+        const data = {
+            id: document.getElementById('editId').value,
+            title: document.getElementById('editTitle').value,
+            author: document.getElementById('editAuthor').value,
+            type: document.getElementById('editType').value,
+            publisher: document.getElementById('editPublisher').value,
+            days: document.getElementById('editDays').value,
+            price: document.getElementById('editPrice').value
+        };
+        axios.post('/api/book/update', data).then(res => {
+            alert(res.data.msg);
+            if (res.data.code === 200) {
+                closeModal('editModal');
+                loadBooks();
+            }
+        });
+    }
+
+    // --- 废弃逻辑 ---
+    function discard(bookId) {
+        if (!confirm('确定要废弃这本书吗？')) return;
+        axios.post('/api/book/discard', { id: bookId }).then(res => {
+            alert(res.data.msg);
+            if (res.data.code === 200) {
+                loadBooks();
+            }
+        });
+    }
+
+    // --- 副本管理逻辑 ---
+    function openCopyModal(bookId) {
+        document.getElementById('copyBookId').value = bookId;
+        document.getElementById('copyModal').style.display = 'block';
+        loadCopies(bookId);
+    }
+
+    function loadCopies(bookId) {
+        axios.get('/api/book/copy/query', { params: { bookId: bookId } }).then(res => {
+            if (res.data.code === 200) {
+                const tbody = document.getElementById('copyBody');
+                tbody.innerHTML = '';
+                if(res.data.data.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="3" style="text-align:center;">暂无副本</td></tr>';
+                    return;
+                }
+                res.data.data.forEach(copy => {
+                    const status = copy.isBorrowed ? '已借出' : '在馆';
+                    const color = copy.isBorrowed ? 'red' : 'green';
+                    const btn = copy.isBorrowed
+                        ? '<button class="btn" style="background:#ccc; cursor:not-allowed;">不可删除</button>'
+                        : `<button class="btn btn-discard" onclick="deleteCopy('${copy.id}', '${bookId}')">删除</button>`;
+                    tbody.innerHTML += `
+                        <tr>
+                            <td style="font-size:12px;">${copy.id}</td>
+                            <td style="color:${color}">${status}</td>
+                            <td>${btn}</td>
+                        </tr>
+                    `;
+                });
+            }
+        });
+    }
+
+    function addCopy() {
+        const bookId = document.getElementById('copyBookId').value;
+        axios.post('/api/book/copy/add', { bookId: bookId }).then(res => {
+            alert(res.data.msg);
+            if (res.data.code === 200) {
+                loadCopies(bookId);
+                loadBooks(); // 刷新后台库存
+            }
+        });
+    }
+
+    function deleteCopy(copyId, bookId) {
+        if (!confirm('确定要删除该副本吗？')) return;
+        axios.post('/api/book/copy/delete', { copyId: copyId }).then(res => {
+            alert(res.data.msg);
+            if (res.data.code === 200) {
+                loadCopies(bookId);
+                loadBooks(); // 刷新后台库存
+            }
+        });
+    }
+
+    function closeModal(modalId) {
+        document.getElementById(modalId).style.display = 'none';
+    }
+</script>
+</body>
+</html>
