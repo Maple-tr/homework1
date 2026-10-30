@@ -10,7 +10,7 @@
         .header h2 { margin: 0; color: #333; }
         .logout-btn { padding: 8px 15px; cursor: pointer; background: #dc3545; color: white; border: none; border-radius: 4px; font-size: 14px; }
         .logout-btn:hover { background: #c82333; }
-        .function-cards { display: flex; flex-wrap: wrap; gap: 15px; }
+
         .card { background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 0 5px rgba(0,0,0,0.1); width: 180px; text-align: center; cursor: pointer; transition: 0.2s; font-weight: bold; color: #333; border: 2px solid transparent; user-select: none; }
         .card:hover { background: #007bff; color: #fff; transform: translateY(-3px); box-shadow: 0 4px 8px rgba(0,0,0,0.2); }
 
@@ -24,41 +24,41 @@
     <button class="logout-btn" onclick="logout()">退出登录</button>
 </div>
 
-<!-- 管理员卡片 -->
+<!-- ================= 管理员卡片 ================= -->
 <div class="card-group" id="group-管理员">
     <div class="card" onclick="go('/user_query.html')">用户信息查询</div>
-    <div class="card" onclick="alert('开发中')">借阅记录查询</div>
-    <div class="card" onclick="alert('开发中')">借阅数据统计</div>
-    <div class="card" onclick="alert('开发中')">借书</div>
-    <div class="card" onclick="alert('开发中')">还书</div>
-    <div class="card" onclick="alert('开发中')">审阅推荐图书</div>
+    <div class="card" onclick="alert('该功能正在开发中...')">借阅记录查询</div>
+    <div class="card" onclick="alert('该功能正在开发中...')">借阅数据统计</div>
+    <div class="card" onclick="go('/borrow_return.html')">借书</div>
+    <div class="card" onclick="go('/borrow_return.html')">还书</div>
+    <div class="card" onclick="alert('该功能正在开发中...')">审阅推荐图书</div>
 </div>
 
-<!-- 操作员卡片 -->
+<!-- ================= 操作员卡片 ================= -->
 <div class="card-group" id="group-操作员">
     <div class="card" onclick="go('/add_book.html')">添加书籍</div>
-    <div class="card" onclick="alert('开发中')">查看所有书籍</div>
-    <div class="card" onclick="alert('开发中')">废弃图书</div>
-    <div class="card" onclick="alert('开发中')">编辑图书</div>
-    <div class="card" onclick="alert('开发中')">图书副本编辑</div>
-    <div class="card" onclick="alert('开发中')">借书</div>
-    <div class="card" onclick="alert('开发中')">还书</div>
-    <div class="card" onclick="alert('开发中')">个人借阅查询</div>
+    <div class="card" onclick="alert('该功能正在开发中...')">查看所有书籍</div>
+    <div class="card" onclick="alert('该功能正在开发中...')">废弃图书</div>
+    <div class="card" onclick="alert('该功能正在开发中...')">编辑图书</div>
+    <div class="card" onclick="alert('该功能正在开发中...')">图书副本编辑</div>
+    <div class="card" onclick="go('/borrow_return.html')">借书</div>
+    <div class="card" onclick="go('/borrow_return.html')">还书</div>
+    <div class="card" onclick="alert('该功能正在开发中...')">个人借阅查询</div>
 </div>
 
-<!-- 学生卡片 -->
+<!-- ================= 学生卡片 ================= -->
 <div class="card-group" id="group-学生">
-    <div class="card" onclick="alert('开发中')">借书</div>
-    <div class="card" onclick="alert('开发中')">还书</div>
-    <div class="card" onclick="alert('开发中')">个人借阅查询</div>
+    <div class="card" onclick="go('/borrow_return.html')">借书</div>
+    <div class="card" onclick="go('/borrow_return.html')">还书</div>
+    <div class="card" onclick="alert('该功能正在开发中...')">个人借阅查询</div>
 </div>
 
-<!-- 教师卡片 -->
+<!-- ================= 教师卡片 ================= -->
 <div class="card-group" id="group-教师">
-    <div class="card" onclick="alert('开发中')">借书</div>
-    <div class="card" onclick="alert('开发中')">还书</div>
-    <div class="card" onclick="alert('开发中')">个人借阅查询</div>
-    <div class="card" onclick="alert('开发中')">推荐图书</div>
+    <div class="card" onclick="go('/borrow_return.html')">借书</div>
+    <div class="card" onclick="go('/borrow_return.html')">还书</div>
+    <div class="card" onclick="alert('该功能正在开发中...')">个人借阅查询</div>
+    <div class="card" onclick="alert('该功能正在开发中...')">推荐图书</div>
 </div>
 
 <script>
@@ -82,10 +82,12 @@
         });
     };
 
+    // 通用跳转方法
     function go(url) {
         window.location.href = url;
     }
 
+    // 退出登录
     function logout() {
         axios.get('/api/logout').then(() => {
             window.location.href = '/login.html';
