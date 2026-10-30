@@ -3,136 +3,88 @@
 <head>
     <meta charset="UTF-8">
     <title>用户信息查询</title>
-    <script src="/js/axios.min.js"></script>
+    <script src="js/axios.min.js"></script>
     <style>
         body { font-family: Arial, sans-serif; background-color: #f4f4f4; padding: 20px; }
         .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
         .search-box { background: #fff; padding: 15px; border-radius: 8px; display: flex; gap: 10px; box-shadow: 0 0 5px rgba(0,0,0,0.1); }
         .search-box input { padding: 8px; width: 300px; border: 1px solid #ccc; border-radius: 4px; }
         .search-box button { padding: 8px 20px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; }
-
-        /* 表格样式 */
         table { width: 100%; border-collapse: collapse; background: #fff; box-shadow: 0 0 5px rgba(0,0,0,0.1); border-radius: 8px; overflow: hidden; display: none; }
         th, td { padding: 12px; text-align: left; border-bottom: 1px solid #eee; }
         th { background: #007bff; color: white; }
         tr:hover { background: #f8f9fa; }
-
         .btn-view { padding: 5px 10px; background: #28a745; color: white; border: none; border-radius: 4px; cursor: pointer; }
         .btn-back { padding: 8px 15px; background: #6c757d; color: white; border: none; border-radius: 4px; cursor: pointer; text-decoration: none;}
-
-        /* 弹窗 (Modal) 样式 */
         .modal { display: none; position: fixed; z-index: 1; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); }
-        .modal-content { background-color: #fefefe; margin: 10% auto; padding: 20px; border: 1px solid #888; width: 400px; border-radius: 8px; box-shadow: 0 5px 15px rgba(0,0,0,0.3); position: relative; }
+        .modal-content { background-color: #fefefe; margin: 10% auto; padding: 20px; border: 1px solid #888; width: 400px; border-radius: 8px; position: relative; }
         .close { color: #aaa; float: right; font-size: 28px; font-weight: bold; cursor: pointer; }
-        .close:hover { color: black; }
         .detail-row { margin-bottom: 10px; border-bottom: 1px dashed #eee; padding-bottom: 5px;}
         .detail-label { font-weight: bold; color: #555; display: inline-block; width: 100px;}
     </style>
 </head>
 <body>
-
 <div class="header">
     <div class="search-box">
         <input type="text" id="keyword" placeholder="请输入姓名、手机号或专业进行模糊查询...">
         <button onclick="queryUsers()">查询</button>
     </div>
-    <a href="/index.html" class="btn-back">返回首页</a>
+    <a href="index.html" class="btn-back">返回首页</a>
 </div>
 
-<!-- 数据表格（默认隐藏） -->
 <table id="userTable">
-    <thead>
-    <tr>
-        <th>姓名</th>
-        <th>角色</th>
-        <th>手机号</th>
-        <th>专业</th>
-        <th>创建时间</th>
-        <th>操作</th>
-    </tr>
-    </thead>
-    <tbody id="tableBody">
-    <!-- 动态渲染 -->
-    </tbody>
+    <thead><tr><th>姓名</th><th>角色</th><th>手机号</th><th>专业</th><th>创建时间</th><th>操作</th></tr></thead>
+    <tbody id="tableBody"></tbody>
 </table>
 
-<!-- 弹窗详情 -->
 <div id="detailModal" class="modal">
     <div class="modal-content">
         <span class="close" onclick="closeModal()">&times;</span>
         <h2 style="text-align:center;">用户详情</h2>
-        <div id="modalBody">
-            <!-- 动态渲染 -->
-        </div>
+        <div id="modalBody"></div>
     </div>
 </div>
 
 <script>
-    let globalUserData = []; // 全局变量，暂存查询结果，方便弹窗读取
-
+    let globalUserData = [];
     function queryUsers() {
         const keyword = document.getElementById('keyword').value.trim();
-
-        axios.get('/api/user/query', { params: { keyword: keyword } }).then(res => {
+        axios.get('api/user/query', { params: { keyword: keyword } }).then(res => {
             if (res.data.code === 200) {
                 globalUserData = res.data.data;
                 renderTable(globalUserData);
-            } else {
-                alert(res.data.msg);
-            }
-        }).catch(err => {
-            console.error(err);
-            alert('网络异常');
+            } else { alert(res.data.msg); }
         });
     }
 
     function renderTable(data) {
         const table = document.getElementById('userTable');
         const tbody = document.getElementById('tableBody');
-
-        // 默认不显示数据，查询后显示
         if (data.length === 0) {
             tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">没有查到相关数据</td></tr>';
-            table.style.display = 'table';
-            return;
+            table.style.display = 'table'; return;
         }
-
         tbody.innerHTML = '';
         data.forEach((user, index) => {
             const tr = document.createElement('tr');
-
-            // 格式化时间 (取 YYYY-MM-DD HH:mm:ss)
             let createTimeStr = '未知';
-            if (user.createTime) {
-                // fastjson 可能把 LocalDateTime 序列化成 "2026-10-19T15:15:01" 或者数组
-                // 如果是 ISO 格式，我们直接把 T 替换成空格并截取秒
-                if(typeof user.createTime === 'string') {
-                    createTimeStr = user.createTime.replace('T', ' ').substring(0, 19);
-                }
+            if (user.createTime && typeof user.createTime === 'string') {
+                createTimeStr = user.createTime.replace('T', ' ').substring(0, 19);
             }
-
             tr.innerHTML = `
-                <td>${user.name || ''}</td>
-                <td>${user.role || ''}</td>
-                <td>${user.phone || ''}</td>
-                <td>${user.major || ''}</td>
-                <td>${createTimeStr}</td>
+                <td>${user.name || ''}</td><td>${user.role || ''}</td><td>${user.phone || ''}</td>
+                <td>${user.major || ''}</td><td>${createTimeStr}</td>
                 <td><button class="btn-view" onclick="showDetail(${index})">查看</button></td>
             `;
             tbody.appendChild(tr);
         });
-
         table.style.display = 'table';
     }
 
-    // 显示详情弹窗
     function showDetail(index) {
         const user = globalUserData[index];
-
         let createTimeStr = user.createTime ? user.createTime.replace('T', ' ').substring(0, 19) : '无';
-        let updateTimeStr = user.updateTime ? user.updateTime.replace('T', ' ').substring(0, 19) : '无';
         let loginTimeStr = user.loginTime ? user.loginTime.replace('T', ' ').substring(0, 19) : '从未登录';
-
         let html = `
             <div class="detail-row"><span class="detail-label">ID:</span> ${user.id}</div>
             <div class="detail-row"><span class="detail-label">姓名:</span> ${user.name}</div>
@@ -142,8 +94,6 @@
             <div class="detail-row"><span class="detail-label">创建时间:</span> ${createTimeStr}</div>
             <div class="detail-row"><span class="detail-label">最后登录:</span> ${loginTimeStr}</div>
         `;
-
-        // 根据角色动态展示特有属性
         if (user.role === '学生') {
             html += `<div class="detail-row"><span class="detail-label">年级:</span> ${user.grade || '无'}</div>`;
             html += `<div class="detail-row"><span class="detail-label">所属学院:</span> ${user.college || '无'}</div>`;
@@ -157,21 +107,13 @@
             html += `<div class="detail-row"><span class="detail-label">负责区域:</span> ${user.area || '无'}</div>`;
             html += `<div class="detail-row"><span class="detail-label">职务:</span> ${user.duty || '无'}</div>`;
         }
-
         document.getElementById('modalBody').innerHTML = html;
         document.getElementById('detailModal').style.display = 'block';
     }
-
-    function closeModal() {
-        document.getElementById('detailModal').style.display = 'none';
-    }
-
-    // 点击弹窗外部也可以关闭
+    function closeModal() { document.getElementById('detailModal').style.display = 'none'; }
     window.onclick = function(event) {
         const modal = document.getElementById('detailModal');
-        if (event.target === modal) {
-            modal.style.display = 'none';
-        }
+        if (event.target === modal) modal.style.display = 'none';
     }
 </script>
 </body>

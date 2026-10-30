@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <title>审阅图书</title>
-    <script src="/js/axios.min.js"></script>
+    <script src="js/axios.min.js"></script>
     <style>
         body { font-family: Arial, sans-serif; background-color: #f4f4f4; padding: 20px; }
         .header { display: flex; justify-content: space-between; margin-bottom: 20px;}
@@ -12,83 +12,45 @@
         th, td { padding: 12px; text-align: left; border-bottom: 1px solid #eee; }
         th { background: #007bff; color: white; }
         .btn { padding: 5px 10px; color: white; border: none; border-radius: 4px; cursor: pointer; margin-right: 5px;}
-        .btn-pass { background: #28a745; }
-        .btn-reject { background: #dc3545; }
+        .btn-pass { background: #28a745; } .btn-reject { background: #dc3545; }
         .tag { padding: 3px 8px; border-radius: 12px; font-size: 12px; color: white;}
-        .tag-pending { background: #ffc107; color: black; }
-        .tag-passed { background: #28a745; }
-        .tag-rejected { background: #dc3545; }
+        .tag-pending { background: #ffc107; color: black; } .tag-passed { background: #28a745; } .tag-rejected { background: #dc3545; }
     </style>
 </head>
 <body>
-<div class="header">
-    <h2>审阅推荐图书</h2>
-    <a href="/index.html" class="btn-back">返回首页</a>
-</div>
-
-<table>
-    <thead>
-    <tr><th>书名</th><th>作者</th><th>出版社</th><th>价格</th><th>状态</th><th>操作/理由</th></tr>
-    </thead>
-    <tbody id="tableBody"></tbody>
-</table>
-
+<div class="header"><h2>审阅推荐图书</h2><a href="index.html" class="btn-back">返回首页</a></div>
+<table><thead><tr><th>书名</th><th>作者</th><th>出版社</th><th>价格</th><th>状态</th><th>操作/理由</th></tr></thead><tbody id="tableBody"></tbody></table>
 <script>
     window.onload = function() { loadList(); };
-
     function loadList() {
-        axios.get('/api/recommend/query').then(res => {
+        axios.get('api/recommend/query').then(res => {
             if (res.data.code === 200) {
-                const tbody = document.getElementById('tableBody');
-                tbody.innerHTML = '';
+                const tbody = document.getElementById('tableBody'); tbody.innerHTML = '';
                 res.data.data.forEach(item => {
-                    let statusHtml = '';
-                    let actionHtml = '';
+                    let statusHtml = '', actionHtml = '';
                     if(item.status === '待审核') {
                         statusHtml = `<span class="tag tag-pending">待审核</span>`;
-                        actionHtml = `
-                            <button class="btn btn-pass" onclick="review('${item.id}', 'pass')">同意加入</button>
-                            <button class="btn btn-reject" onclick="review('${item.id}', 'reject')">驳回</button>
-                        `;
+                        actionHtml = `<button class="btn btn-pass" onclick="review('${item.id}', 'pass')">同意加入</button><button class="btn btn-reject" onclick="review('${item.id}', 'reject')">驳回</button>`;
                     } else if(item.status === '已通过') {
-                        statusHtml = `<span class="tag tag-passed">已通过</span>`;
-                        actionHtml = '已加入书库';
+                        statusHtml = `<span class="tag tag-passed">已通过</span>`; actionHtml = '已加入书库';
                     } else {
-                        statusHtml = `<span class="tag tag-rejected">已驳回</span>`;
-                        actionHtml = `理由：${item.reason || '无'}`;
+                        statusHtml = `<span class="tag tag-rejected">已驳回</span>`; actionHtml = `理由：${item.reason || '无'}`;
                     }
-
-                    tbody.innerHTML += `
-                        <tr>
-                            <td>${item.bookName}</td>
-                            <td>${item.author}</td>
-                            <td>${item.publisher}</td>
-                            <td>${item.price}</td>
-                            <td>${statusHtml}</td>
-                            <td>${actionHtml}</td>
-                        </tr>
-                    `;
+                    tbody.innerHTML += `<tr><td>${item.bookName}</td><td>${item.author}</td><td>${item.publisher}</td><td>${item.price}</td><td>${statusHtml}</td><td>${actionHtml}</td></tr>`;
                 });
             }
         });
     }
-
     function review(id, action) {
         let reason = "";
         if(action === 'reject') {
             reason = prompt("请输入驳回理由：");
-            if(reason === null) return; // 点了取消
+            if(reason === null) return;
             if(reason.trim() === "") { alert("驳回必须填写理由！"); return; }
         } else {
             if(!confirm("同意后该图书将自动加入书库，确定吗？")) return;
         }
-
-        axios.post('/api/recommend/review', { id: id, action: action, reason: reason }).then(res => {
-            alert(res.data.msg);
-            if(res.data.code === 200) {
-                loadList();
-            }
-        });
+        axios.post('api/recommend/review', { id: id, action: action, reason: reason }).then(res => { alert(res.data.msg); if(res.data.code === 200) loadList(); });
     }
 </script>
 </body>

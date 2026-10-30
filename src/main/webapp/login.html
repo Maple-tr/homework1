@@ -3,8 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <title>图书馆系统 - 登录</title>
-    <!-- 引入本地 Axios，防止网络超时 -->
-    <script src="/js/axios.min.js"></script>
+    <script src="js/axios.min.js"></script>
     <style>
         body { display: flex; justify-content: center; align-items: center; height: 100vh; background-color: #f4f4f4; margin: 0; }
         .login-box { background: #fff; padding: 30px; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1); width: 320px; }
@@ -22,14 +21,12 @@
         .error-msg { color: red; font-size: 14px; margin-bottom: 10px; display: none; text-align: center; }
         .register-link { text-align: center; margin-top: 15px; font-size: 14px; }
         .register-link a { color: #007bff; text-decoration: none; }
-        .register-link a:hover { text-decoration: underline; }
     </style>
 </head>
 <body>
 <div class="login-box">
     <h2>用户登录</h2>
     <div class="error-msg" id="errorMsg"></div>
-
     <div class="form-group">
         <input type="text" id="username" placeholder="请输入用户名(姓名)">
     </div>
@@ -38,32 +35,27 @@
     </div>
     <div class="form-group captcha-box">
         <input type="text" id="captcha" placeholder="验证码">
-        <!-- 点击图片刷新验证码 -->
-        <img src="/api/captcha" onclick="this.src='/api/captcha?t='+new Date().getTime()" title="点击刷新">
+        <!-- 去掉绝对路径 / -->
+        <img src="api/captcha" onclick="this.src='api/captcha?t='+new Date().getTime()" title="点击刷新">
     </div>
-
     <div class="btn-group">
         <button class="btn-reset" onclick="resetForm()">重置</button>
         <button class="btn-login" onclick="login()">登录</button>
     </div>
-
     <div class="register-link">
-        没有账号？ <a href="/register.html">去注册</a>
+        没有账号？ <a href="register.html">去注册</a>
     </div>
 </div>
 
 <script>
-    // 重置表单
     function resetForm() {
         document.getElementById('username').value = '';
         document.getElementById('password').value = '';
         document.getElementById('captcha').value = '';
         document.getElementById('errorMsg').style.display = 'none';
-        // 顺便刷新验证码
-        document.querySelector('img').src = '/api/captcha?t=' + new Date().getTime();
+        document.querySelector('img').src = 'api/captcha?t=' + new Date().getTime();
     }
 
-    // 登录逻辑
     function login() {
         const name = document.getElementById('username').value;
         const password = document.getElementById('password').value;
@@ -76,29 +68,22 @@
             return;
         }
 
-        // 发送 Axios 请求
-        axios.post('/api/login', { name, password, captcha }).then(res => {
+        axios.post('api/login', { name, password, captcha }).then(res => {
             if (res.data.code === 200) {
-                // 登录成功，跳转首页
-                window.location.href = '/index.html';
+                window.location.href = 'index.html';
             } else {
                 errorMsg.innerText = res.data.msg;
                 errorMsg.style.display = 'block';
-                // 登录失败，刷新验证码
-                document.querySelector('img').src = '/api/captcha?t=' + new Date().getTime();
+                document.querySelector('img').src = 'api/captcha?t=' + new Date().getTime();
             }
         }).catch(err => {
-            console.error(err);
             errorMsg.innerText = '网络异常，请稍后再试';
             errorMsg.style.display = 'block';
         });
     }
 
-    // 支持在输入框内按回车登录
     document.addEventListener('keydown', function(event) {
-        if (event.key === 'Enter') {
-            login();
-        }
+        if (event.key === 'Enter') { login(); }
     });
 </script>
 </body>

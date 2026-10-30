@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <title>添加书籍</title>
-    <script src="/js/axios.min.js"></script>
+    <script src="js/axios.min.js"></script>
     <style>
         body { font-family: Arial, sans-serif; background-color: #f4f4f4; padding: 20px; }
         .container { display: flex; gap: 20px; }
@@ -21,11 +21,7 @@
     </style>
 </head>
 <body>
-<div class="header">
-    <h2>添加书籍</h2>
-    <a href="/index.html" class="btn-back">返回首页</a>
-</div>
-
+<div class="header"><h2>添加书籍</h2><a href="index.html" class="btn-back">返回首页</a></div>
 <div class="container">
     <div class="form-box">
         <div class="form-group"><label>书名</label><input type="text" id="title"></div>
@@ -34,69 +30,41 @@
         <div class="form-group"><label>出版社</label><input type="text" id="publisher"></div>
         <div class="form-group"><label>还书期限(天)</label><input type="number" id="days" value="30"></div>
         <div class="form-group"><label>价格</label><input type="number" step="0.01" id="price"></div>
-        <div class="form-group"><label>库存数量 (自动生成副本)</label><input type="number" id="stock" value="1"></div>
+        <div class="form-group"><label>库存数量</label><input type="number" id="stock" value="1"></div>
         <div class="form-group"><label>简介</label><textarea id="introduction" rows="3"></textarea></div>
         <button class="btn-submit" onclick="addBook()">添加图书</button>
     </div>
-
     <div class="list-box">
-        <h3>现有图书列表 (最新添加的在最上面)</h3>
-        <table>
-            <thead>
-            <tr><th>书名</th><th>作者</th><th>类型</th><th>出版社</th><th>库存</th><th>状态</th></tr>
-            </thead>
-            <tbody id="tableBody"></tbody>
-        </table>
+        <h3>现有图书列表</h3>
+        <table><thead><tr><th>书名</th><th>作者</th><th>类型</th><th>出版社</th><th>库存</th><th>状态</th></tr></thead><tbody id="tableBody"></tbody></table>
     </div>
 </div>
-
 <script>
     window.onload = function() { loadBooks(); };
-
     function loadBooks() {
-        axios.get('/api/book/query', { params: { keyword: '' } }).then(res => {
+        axios.get('api/book/query', { params: { keyword: '' } }).then(res => {
             if (res.data.code === 200) {
-                const tbody = document.getElementById('tableBody');
-                tbody.innerHTML = '';
+                const tbody = document.getElementById('tableBody'); tbody.innerHTML = '';
                 res.data.data.forEach(book => {
-                    tbody.innerHTML += `
-                        <tr>
-                            <td>${book.title}</td>
-                            <td>${book.author}</td>
-                            <td>${book.type}</td>
-                            <td>${book.publisher}</td>
-                            <td>${book.stock}</td>
-                            <td>${book.status}</td>
-                        </tr>
-                    `;
+                    tbody.innerHTML += `<tr><td>${book.title}</td><td>${book.author}</td><td>${book.type}</td><td>${book.publisher}</td><td>${book.stock}</td><td>${book.status}</td></tr>`;
                 });
             }
         });
     }
-
     function addBook() {
         const data = {
-            title: document.getElementById('title').value,
-            author: document.getElementById('author').value,
-            type: document.getElementById('type').value,
-            publisher: document.getElementById('publisher').value,
-            days: document.getElementById('days').value,
-            price: document.getElementById('price').value,
-            stock: document.getElementById('stock').value,
-            introduction: document.getElementById('introduction').value
+            title: document.getElementById('title').value, author: document.getElementById('author').value,
+            type: document.getElementById('type').value, publisher: document.getElementById('publisher').value,
+            days: document.getElementById('days').value, price: document.getElementById('price').value,
+            stock: document.getElementById('stock').value, introduction: document.getElementById('introduction').value
         };
-
-        if (!data.title || !data.author || !data.stock) {
-            alert('书名、作者和库存为必填项'); return;
-        }
-
-        axios.post('/api/book/add', data).then(res => {
+        if (!data.title || !data.author || !data.stock) { alert('书名、作者和库存为必填项'); return; }
+        axios.post('api/book/add', data).then(res => {
             alert(res.data.msg);
             if (res.data.code === 200) {
                 document.querySelectorAll('.form-box input, .form-box textarea').forEach(el => el.value = '');
-                document.getElementById('stock').value = '1';
-                document.getElementById('days').value = '30';
-                loadBooks(); // 立即刷新右侧列表
+                document.getElementById('stock').value = '1'; document.getElementById('days').value = '30';
+                loadBooks();
             }
         });
     }

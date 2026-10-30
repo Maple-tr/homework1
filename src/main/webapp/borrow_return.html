@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <title>借书与还书</title>
-    <script src="/js/axios.min.js"></script>
+    <script src="js/axios.min.js"></script>
     <style>
         body { font-family: Arial, sans-serif; background-color: #f4f4f4; padding: 20px; }
         .header { display: flex; justify-content: space-between; margin-bottom: 20px;}
@@ -14,111 +14,54 @@
         th, td { padding: 10px; border-bottom: 1px solid #eee; text-align: left; }
         th { background: #f8f9fa; }
         .btn { padding: 5px 10px; color: white; border: none; border-radius: 4px; cursor: pointer; }
-        .btn-borrow { background: #28a745; }
-        .btn-return { background: #dc3545; }
+        .btn-borrow { background: #28a745; } .btn-return { background: #dc3545; }
     </style>
 </head>
 <body>
-<div class="header">
-    <h2>借书与还书中心</h2>
-    <a href="/index.html" class="btn-back">返回首页</a>
-</div>
-
+<div class="header"><h2>借书与还书中心</h2><a href="index.html" class="btn-back">返回首页</a></div>
 <div class="container">
-    <!-- 左侧：借书 -->
     <div class="box">
         <h3>可借阅的图书</h3>
-        <table>
-            <thead>
-            <tr><th>书名</th><th>作者</th><th>库存</th><th>操作</th></tr>
-            </thead>
-            <tbody id="bookBody"></tbody>
-        </table>
+        <table><thead><tr><th>书名</th><th>作者</th><th>库存</th><th>操作</th></tr></thead><tbody id="bookBody"></tbody></table>
     </div>
-
-    <!-- 右侧：还书 -->
     <div class="box">
         <h3>我的借阅记录</h3>
-        <table>
-            <thead>
-            <tr><th>书名</th><th>借书日期</th><th>应还日期</th><th>状态</th><th>操作</th></tr>
-            </thead>
-            <tbody id="loanBody"></tbody>
-        </table>
+        <table><thead><tr><th>书名</th><th>借书日期</th><th>应还日期</th><th>状态</th><th>操作</th></tr></thead><tbody id="loanBody"></tbody></table>
     </div>
 </div>
-
 <script>
-    window.onload = function() {
-        loadBooks();
-        loadLoans();
-    };
-
+    window.onload = function() { loadBooks(); loadLoans(); };
     function loadBooks() {
-        axios.get('/api/book/query', { params: { keyword: '' } }).then(res => {
+        axios.get('api/book/query', { params: { keyword: '' } }).then(res => {
             if (res.data.code === 200) {
-                const tbody = document.getElementById('bookBody');
-                tbody.innerHTML = '';
+                const tbody = document.getElementById('bookBody'); tbody.innerHTML = '';
                 res.data.data.forEach(book => {
                     if (book.status === '正常' && book.stock > 0) {
-                        tbody.innerHTML += `
-                            <tr>
-                                <td>${book.title}</td>
-                                <td>${book.author}</td>
-                                <td>${book.stock}</td>
-                                <td><button class="btn btn-borrow" onclick="borrow('${book.id}')">借阅</button></td>
-                            </tr>
-                        `;
+                        tbody.innerHTML += `<tr><td>${book.title}</td><td>${book.author}</td><td>${book.stock}</td><td><button class="btn btn-borrow" onclick="borrow('${book.id}')">借阅</button></td></tr>`;
                     }
                 });
             }
         });
     }
-
     function loadLoans() {
-        axios.get('/api/loan/query').then(res => {
+        axios.get('api/loan/query').then(res => {
             if (res.data.code === 200) {
-                const tbody = document.getElementById('loanBody');
-                tbody.innerHTML = '';
+                const tbody = document.getElementById('loanBody'); tbody.innerHTML = '';
                 res.data.data.forEach(loan => {
                     let btn = '';
-                    if (loan.status === '未还') {
-                        btn = `<button class="btn btn-return" onclick="returnBook('${loan.loanId}')">还书</button>`;
-                    }
-                    tbody.innerHTML += `
-                        <tr>
-                            <td>${loan.title}</td>
-                            <td>${loan.borrowDate}</td>
-                            <td>${loan.dueDate}</td>
-                            <td>${loan.status}</td>
-                            <td>${btn}</td>
-                        </tr>
-                    `;
+                    if (loan.status === '未还') btn = `<button class="btn btn-return" onclick="returnBook('${loan.loanId}')">还书</button>`;
+                    tbody.innerHTML += `<tr><td>${loan.title}</td><td>${loan.borrowDate}</td><td>${loan.dueDate}</td><td>${loan.status}</td><td>${btn}</td></tr>`;
                 });
             }
         });
     }
-
     function borrow(bookId) {
         if (!confirm('确定要借阅这本书吗？')) return;
-        axios.post('/api/borrow', { bookId: bookId }).then(res => {
-            alert(res.data.msg);
-            if (res.data.code === 200) {
-                loadBooks();
-                loadLoans();
-            }
-        });
+        axios.post('api/borrow', { bookId: bookId }).then(res => { alert(res.data.msg); if (res.data.code === 200) { loadBooks(); loadLoans(); } });
     }
-
     function returnBook(loanId) {
         if (!confirm('确定要归还这本书吗？')) return;
-        axios.post('/api/return', { loanId: loanId }).then(res => {
-            alert(res.data.msg);
-            if (res.data.code === 200) {
-                loadBooks();
-                loadLoans();
-            }
-        });
+        axios.post('api/return', { loanId: loanId }).then(res => { alert(res.data.msg); if (res.data.code === 200) { loadBooks(); loadLoans(); } });
     }
 </script>
 </body>
