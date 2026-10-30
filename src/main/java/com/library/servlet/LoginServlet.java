@@ -20,17 +20,19 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.util.List;
 
 @WebServlet("/api/login")
 public class LoginServlet extends HttpServlet {
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        // 强制设置请求体编码为 UTF-8
+        // 1. 设置编码
         req.setCharacterEncoding("UTF-8");
         resp.setContentType("application/json;charset=UTF-8");
         PrintWriter out = resp.getWriter();
 
+        // 2. 接收数据
         BufferedReader reader = req.getReader();
         StringBuilder sb = new StringBuilder();
         String line;
@@ -41,6 +43,7 @@ public class LoginServlet extends HttpServlet {
         String password = json.getString("password");
         String captcha = json.getString("captcha");
 
+        // 3. 校验验证码
         HttpSession session = req.getSession();
         String sessionCode = (String) session.getAttribute("captchaCode");
         if (sessionCode == null || !sessionCode.equalsIgnoreCase(captcha)) {
@@ -48,9 +51,10 @@ public class LoginServlet extends HttpServlet {
             return;
         }
 
+        // 4. 校验账号密码
         try (Connection conn = DBUtil.getConnection()) {
             String sql = "SELECT * FROM user WHERE name = ? AND password = ?";
-            java.sql.PreparedStatement ps = conn.prepareStatement(sql);
+            PreparedStatement ps = conn.prepareStatement(sql);
             ps.setString(1, name);
             ps.setString(2, password);
             java.sql.ResultSet rs = ps.executeQuery();
@@ -62,7 +66,7 @@ public class LoginServlet extends HttpServlet {
                 Student s = list.get(0);
                 User user;
 
-                // ===== 修改了这里：根据中文角色匹配具体的子类 =====
+                // 根据中文角色匹配具体的子类
                 String roleStr = s.getRole();
                 if ("管理员".equals(roleStr)) {
                     user = new Admin();
@@ -73,14 +77,29 @@ public class LoginServlet extends HttpServlet {
                 } else {
                     user = new Student();
                 }
-                // 把查出来的数据拷贝给具体的 user 对象
                 user = JSON.parseObject(JSON.toJSONString(s), user.getClass());
 
+                // ==========================================
+                // === 新增：更新数据库中的最后登录时间 ===
+                // ==========================================
+                java.time.LocalDateTime now = java.time.LocalDateTime.now();
+                String updateSql = "UPDATE `user` SET `loginTime` = ? WHERE `id` = ?";
+                PreparedStatement updatePs = conn.prepareStatement(updateSql);
+                updatePs.setTimestamp(1, java.sql.Timestamp.valueOf(now));
+                updatePs.setString(2, user.getId());
+                updatePs.executeUpdate();
+                updatePs.close();
+
+                // 把新时间同步给当前对象，以便存入 Session
+                user.setLoginTime(now);
+
+                // ==========================================
+                // 保存用户信息到 Session
+                // ==========================================
                 session.setAttribute("loginUser", user);
                 session.setAttribute("userRole", user.getRole());
                 session.setAttribute("userName", user.getName());
 
-                // 返回给前端时，把中文角色带上
                 out.write("{\"code\": 200, \"msg\": \"登录成功\", \"role\": \"" + user.getRole() + "\"}");
             }
         } catch (Exception e) {

@@ -3,73 +3,95 @@
 <head>
     <meta charset="UTF-8">
     <title>图书馆系统 - 首页</title>
-    <!-- 引入本地 Axios -->
     <script src="/js/axios.min.js"></script>
     <style>
-        body { font-family: Arial, sans-serif; background-color: #f4f4f4; padding: 20px; }
+        body { font-family: Arial, sans-serif; background-color: #f4f4f4; padding: 20px; margin: 0; }
         .header { background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 0 5px rgba(0,0,0,0.1); margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; }
+        .header h2 { margin: 0; color: #333; }
+        .logout-btn { padding: 8px 15px; cursor: pointer; background: #dc3545; color: white; border: none; border-radius: 4px; font-size: 14px; }
+        .logout-btn:hover { background: #c82333; }
         .function-cards { display: flex; flex-wrap: wrap; gap: 15px; }
-        .card { background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 0 5px rgba(0,0,0,0.1); width: 180px; text-align: center; cursor: pointer; transition: 0.2s; font-weight: bold; color: #333; }
-        .card:hover { background: #007bff; color: #fff; transform: translateY(-2px); }
+        .card { background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 0 5px rgba(0,0,0,0.1); width: 180px; text-align: center; cursor: pointer; transition: 0.2s; font-weight: bold; color: #333; border: 2px solid transparent; user-select: none; }
+        .card:hover { background: #007bff; color: #fff; transform: translateY(-3px); box-shadow: 0 4px 8px rgba(0,0,0,0.2); }
+
+        /* 默认隐藏所有卡片区域 */
+        .card-group { display: none; flex-wrap: wrap; gap: 15px; }
     </style>
 </head>
 <body>
 <div class="header">
     <h2 id="welcomeMsg">加载中...</h2>
-    <button onclick="logout()" style="padding: 8px 15px; cursor: pointer;">退出登录</button>
+    <button class="logout-btn" onclick="logout()">退出登录</button>
 </div>
 
-<div class="function-cards" id="cardsContainer">
-    <!-- 卡片由 JS 动态渲染 -->
+<!-- 管理员卡片 -->
+<div class="card-group" id="group-管理员">
+    <div class="card" onclick="go('/user_query.html')">用户信息查询</div>
+    <div class="card" onclick="alert('开发中')">借阅记录查询</div>
+    <div class="card" onclick="alert('开发中')">借阅数据统计</div>
+    <div class="card" onclick="alert('开发中')">借书</div>
+    <div class="card" onclick="alert('开发中')">还书</div>
+    <div class="card" onclick="alert('开发中')">审阅推荐图书</div>
+</div>
+
+<!-- 操作员卡片 -->
+<div class="card-group" id="group-操作员">
+    <div class="card" onclick="go('/add_book.html')">添加书籍</div>
+    <div class="card" onclick="alert('开发中')">查看所有书籍</div>
+    <div class="card" onclick="alert('开发中')">废弃图书</div>
+    <div class="card" onclick="alert('开发中')">编辑图书</div>
+    <div class="card" onclick="alert('开发中')">图书副本编辑</div>
+    <div class="card" onclick="alert('开发中')">借书</div>
+    <div class="card" onclick="alert('开发中')">还书</div>
+    <div class="card" onclick="alert('开发中')">个人借阅查询</div>
+</div>
+
+<!-- 学生卡片 -->
+<div class="card-group" id="group-学生">
+    <div class="card" onclick="alert('开发中')">借书</div>
+    <div class="card" onclick="alert('开发中')">还书</div>
+    <div class="card" onclick="alert('开发中')">个人借阅查询</div>
+</div>
+
+<!-- 教师卡片 -->
+<div class="card-group" id="group-教师">
+    <div class="card" onclick="alert('开发中')">借书</div>
+    <div class="card" onclick="alert('开发中')">还书</div>
+    <div class="card" onclick="alert('开发中')">个人借阅查询</div>
+    <div class="card" onclick="alert('开发中')">推荐图书</div>
 </div>
 
 <script>
-    let currentRole = '';
-
+    // 页面加载时获取用户信息
     window.onload = function() {
         axios.get('/api/userInfo').then(res => {
             if (res.data.code === 200) {
                 document.getElementById('welcomeMsg').innerText =
                     `欢迎您，${res.data.name} (${res.data.role})`;
-                currentRole = res.data.role; // 获取到的直接是中文
-                renderCards();
+
+                // 根据角色显示对应的 HTML 块
+                const group = document.getElementById('group-' + res.data.role);
+                if(group) {
+                    group.style.display = 'flex';
+                }
             } else {
                 window.location.href = '/login.html';
             }
         }).catch(err => {
-            console.error("获取用户信息失败", err);
             window.location.href = '/login.html';
         });
     };
 
-    function renderCards() {
-        const cardsContainer = document.getElementById('cardsContainer');
-        cardsContainer.innerHTML = ''; // 清空
-        let cards = [];
-
-        // ===== 修改了这里：根据中文角色匹配功能卡 =====
-        if (currentRole === '管理员') {
-            cards = ['用户信息查询', '借阅记录查询', '借阅数据统计', '借书', '还书', '审阅推荐图书'];
-        } else if (currentRole === '学生') {
-            cards = ['借书', '还书', '个人借阅查询'];
-        } else if (currentRole === '操作员') {
-            cards = ['添加书籍', '查看所有书籍', '废弃图书', '编辑图书', '图书副本编辑', '借书', '还书', '个人借阅查询'];
-        } else if (currentRole === '教师') {
-            cards = ['借书', '还书', '个人借阅查询', '推荐图书'];
-        }
-
-        cards.forEach(text => {
-            const card = document.createElement('div');
-            card.className = 'card';
-            card.innerText = text;
-            // TODO: 后续在这里加上点击跳转页面的事件
-            cardsContainer.appendChild(card);
-        });
+    function go(url) {
+        window.location.href = url;
     }
 
     function logout() {
-        // 真实项目中应请求后端清除Session，这里简化处理直接跳转
-        window.location.href = '/login.html';
+        axios.get('/api/logout').then(() => {
+            window.location.href = '/login.html';
+        }).catch(() => {
+            window.location.href = '/login.html';
+        });
     }
 </script>
 </body>

@@ -23,12 +23,11 @@ import java.time.LocalDate;
 public class RegisterServlet extends HttpServlet {
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        // 强制设置请求体编码为 UTF-8
+        // 强制 UTF-8 编码
         req.setCharacterEncoding("UTF-8");
         resp.setContentType("application/json;charset=UTF-8");
         PrintWriter out = resp.getWriter();
 
-        // 1. 接收数据
         BufferedReader reader = req.getReader();
         StringBuilder sb = new StringBuilder();
         String line;
@@ -42,7 +41,6 @@ public class RegisterServlet extends HttpServlet {
         String role = json.getString("role");
 
         try (Connection conn = DBUtil.getConnection()) {
-            // 2. 校验账号和手机号是否重复
             String checkSql = "SELECT COUNT(*) FROM `user` WHERE name = ? OR phone = ?";
             PreparedStatement checkPs = conn.prepareStatement(checkSql);
             checkPs.setString(1, name);
@@ -53,7 +51,6 @@ public class RegisterServlet extends HttpServlet {
                 return;
             }
 
-            // 3. 根据角色实例化具体子类
             User user;
             if ("管理员".equals(role)) {
                 Admin admin = new Admin();
@@ -80,14 +77,12 @@ public class RegisterServlet extends HttpServlet {
                 user = s;
             }
 
-            // 4. 填充公共字段
             user.setName(name);
             user.setPassword(password);
             user.setPhone(phone);
             user.setMajor(major);
             user.setRole(role);
 
-            // 5. 保存到数据库 (现在 JDBCTool 能正确找到 user 表了)
             JDBCTool.save(user, conn);
             out.write("{\"code\": 200, \"msg\": \"注册成功\"}");
 

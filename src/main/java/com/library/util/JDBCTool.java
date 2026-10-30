@@ -43,6 +43,7 @@ public class JDBCTool {
             }
         }
 
+        // 自动填充创建时间和更新时间
         autoFillTime(obj, "createTime");
         autoFillTime(obj, "updateTime");
 
@@ -54,7 +55,6 @@ public class JDBCTool {
             fields.add(field);
         }
 
-        // 加上反引号包裹表名和字段名，防止保留字冲突
         StringBuilder sql = new StringBuilder("INSERT INTO `" + tableName + "` (");
         StringBuilder placeholders = new StringBuilder();
 
@@ -68,7 +68,7 @@ public class JDBCTool {
         }
         sql.append(") VALUES (").append(placeholders).append(")");
 
-        System.out.println("执行的SQL: " + sql.toString()); // 打印出来方便排错
+        System.out.println("执行的SQL: " + sql.toString());
 
         PreparedStatement ps = connection.prepareStatement(sql.toString());
         for (int i = 0; i < fields.size(); i++) {
@@ -152,16 +152,15 @@ public class JDBCTool {
         return list.isEmpty() ? null : list.get(0);
     }
 
+    // === 修复：正确查找 Base 父类里的时间字段 ===
     private static void autoFillTime(Object obj, String fieldName) throws Exception {
-        try {
-            Field field = obj.getClass().getSuperclass().getDeclaredField(fieldName);
-            if (field.getType() == LocalDateTime.class) {
-                field.setAccessible(true);
-                if (fieldName.equals("updateTime") || field.get(obj) == null) {
-                    field.set(obj, LocalDateTime.now());
-                }
+        Field field = getFieldByColumnName(obj.getClass(), fieldName);
+        if (field != null && field.getType() == LocalDateTime.class) {
+            field.setAccessible(true);
+            if (fieldName.equals("updateTime") || field.get(obj) == null) {
+                field.set(obj, LocalDateTime.now());
             }
-        } catch (NoSuchFieldException ignored) {}
+        }
     }
 
     private static Field getFieldByColumnName(Class<?> clazz, String columnName) {
@@ -195,7 +194,6 @@ public class JDBCTool {
 
     private static String getTableName(Class<?> clazz) {
         String className = clazz.getSimpleName();
-        // 核心修改：把所有用户子类统统映射到 user 表
         if ("Admin".equals(className) || "Operator".equals(className) ||
                 "Student".equals(className) || "Teacher".equals(className)) {
             return "user";
